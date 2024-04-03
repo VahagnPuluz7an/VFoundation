@@ -4,7 +4,7 @@
   "displayName": "VFoundation",
   "description": "Foundation for unity project by VahagnPuluz7an.",
   "dependencies": {
-    "com.danishe.dsystem": "2.0.4"
+    "com.danishe.dsystem": "https://github.com/DanilShekarev/com.danishe.dsystem.git"
   },
   "author": {
     "name": "VahagnPuluz7an",
