@@ -1,0 +1,14 @@
+{
+  "name": "com.vpuluz7an.vfoundation",
+  "version": "1.0.0",
+  "displayName": "VFoundation",
+  "description": "Foundation for unity project by VahagnPuluz7an.",
+  "dependencies": {
+    "com.danishe.dsystem": "2.0.4"
+  },
+  "author": {
+    "name": "VahagnPuluz7an",
+    "email": "vahagn.puluz7an@gmail.com",
+    "url": "https://github.com/VahagnPuluz7an/com.vpuluz7an.vfoundation.git"
+  }
+}
