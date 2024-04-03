@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "displayName": "VFoundation",
   "description": "Foundation for unity project by VahagnPuluz7an.",
-  "dependencies": {
-    "com.danishe.dsystem": "https://github.com/DanilShekarev/com.danishe.dsystem.git"
-  },
+  "resolutionStrategy": "higherMinor",
   "author": {
     "name": "VahagnPuluz7an",
     "email": "vahagn.puluz7an@gmail.com",
