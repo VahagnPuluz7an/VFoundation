@@ -1,4 +1,4 @@
-namespace VFoundation.Tutorial
+namespace Tutorial
 {
     public enum TutorialType
     {

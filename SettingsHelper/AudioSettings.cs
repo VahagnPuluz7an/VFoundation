@@ -1,33 +1,29 @@
-using DSystem;
 using UniRx;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 
-namespace VFoundation
+namespace Settings
 {
-    [DisableInitialize]
-    public class AudioSettings : DBehaviour
+    public class AudioSettings : MonoBehaviour, IDisableObject
     {
         [SerializeField] private AudioMixer audioMixer;
         [SerializeField] private Slider musicSlider;
-        [SerializeField] private SwitchToggle audioToggle;
+        [SerializeField] private Slider audioToggle;
     
         private float _audioVolume = 1.0f;
         private float _musicVolume = 1.0f;
-
-        protected override void OnInitialized()
+        
+        public void Initialize()
         {
             _audioVolume = PlayerPrefs.GetFloat("AudioVolume");
             _musicVolume = PlayerPrefs.GetFloat("MusicVolume");
             
-            audioToggle.Init();
-            
             musicSlider.value = _musicVolume;
-            audioToggle.Toggle.isOn = _audioVolume >= 0;
+            audioToggle.value = _audioVolume;
             
             musicSlider.onValueChanged.AddListener(SetMusicVolume);
-            audioToggle.Toggle.onValueChanged.AddListener(AudioToggleSwitched);
+            audioToggle.onValueChanged.AddListener(SetAudioVolume);
 
             Observable.TimerFrame(2).Subscribe(x =>
             {
@@ -36,10 +32,10 @@ namespace VFoundation
             }).AddTo(this);
         }
 
-        protected override void OnDestroy()
+        public void Dispose()
         {
             musicSlider.onValueChanged.RemoveAllListeners();
-            audioToggle.Toggle.onValueChanged.RemoveAllListeners();
+            audioToggle.onValueChanged.RemoveAllListeners();
         }
 
         private void AudioToggleSwitched(bool active)

@@ -1,9 +1,8 @@
 ﻿using System;
-using DSystem;
+using Zenject;
 
 namespace SDK
 {
-    [AutoRegistry]
     public abstract class RewardController : IInitializable
     {
         private static event Action OnSuccess;

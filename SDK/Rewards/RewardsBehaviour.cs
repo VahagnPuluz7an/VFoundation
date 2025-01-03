@@ -1,5 +1,5 @@
 using System;
-using DSystem;
+using Zenject;
 
 namespace SDK.Rewards
 {

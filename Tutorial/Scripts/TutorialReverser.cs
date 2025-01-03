@@ -1,27 +1,25 @@
 ﻿using System;
-using DSystem;
 using UnityEngine;
 
-namespace VFoundation.Tutorial
+namespace Tutorial
 {
-    [AutoRegistry]
     public class TutorialReverser : MonoBehaviour
     {
         [SerializeField] private ReverserStruct[] structs;
 
         public bool HasReverse => structs.Length > 0;
         
-        public void Awake()
-        {
-            TutorialManager.Inited += TutorialManagerOnInited;
+        private void Awake()
+        {          
+            TutorialManager.FirstPartInited += TutorialManagerOnFirstPartInited;
         }
 
-        public void OnDestroy()
+        private void OnDestroy()
         {
-            TutorialManager.Inited -= TutorialManagerOnInited;
+            TutorialManager.FirstPartInited -= TutorialManagerOnFirstPartInited;
         }
 
-        private void TutorialManagerOnInited()
+        private void TutorialManagerOnFirstPartInited()
         {
             if (!HasReverse)
                 return;

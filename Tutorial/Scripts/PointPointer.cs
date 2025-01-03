@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace VFoundation.Tutorial
+namespace Tutorial
 {
     public class PointPointer : MonoBehaviour
     {

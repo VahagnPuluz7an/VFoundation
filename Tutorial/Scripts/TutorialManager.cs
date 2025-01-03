@@ -1,57 +1,70 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DSystem;
+using UniRx;
 using UnityEngine;
 
-namespace VFoundation.Tutorial
+namespace Tutorial
 {
     [DefaultExecutionOrder(-100)]
-    [DisableInitialize]
-    public class TutorialManager : DBehaviour
+    public class TutorialManager : MonoBehaviour
     {
         public static event Action TutorialCompleted; 
-        public static event Action Inited; 
+        public static event Action FirstPartInited; 
+        public static event Action FullInited; 
+        public static event Action NextStep;
+        public static event Action OnPouse;
+        public static event Action OnResume;
         public static int StepIndex { get; private set; }
         public static TutorialPart CurrentPart => _parts[StepIndex];
-        public static bool TutorialIsCompleted => StepIndex >= _parts.Length;
+        public static bool CurrentPartActive => CurrentPart.gameObject.activeSelf;
+        private static bool TutorialIsCompleted => StepIndex >= _parts.Length;
 
         [SerializeField] private TutorialPart[] parts;
         [SerializeField] private TutorialType tutorialType;
 
-        [Inject] private static TutorialReverser _reverser;
+        private static TutorialReverser _reverser;
+        
         private static TutorialPart[] _parts;
         private static TutorialType _tutorialType;
         private static GameObject _gameObject;
-
-        protected override void OnInitialized()
+        
+        private void Awake()
         {
             _parts = parts;
             _tutorialType = tutorialType;
             _gameObject = gameObject;
             
             StepIndex = PlayerPrefs.GetInt("TutorialStepIndex");
-            Inited?.Invoke();
-
-            // if (!_reverser.HasReverse)
-            //     FinishInit();
+            Observable.TimerFrame(1).Subscribe(_ => FirstPartInited?.Invoke()).AddTo(this);
         }
 
         public static void FinishInit()
         {
             foreach (TutorialPart part in _parts)
-                part.SetActive(false);
+                if (part != null)
+                    part.SetActive(false);
 
             if (TutorialIsCompleted)
             {
                 _gameObject.SetActive(false);
+                FullInited?.Invoke();
                 return;
             }
             
             _gameObject.SetActive(true);
 
-            foreach (TutorialPart part in _parts) part.SetActive(false);
+            foreach (TutorialPart part in _parts)
+                if (part != null)
+                    part.SetActive(false);
+            
+            while (_parts[StepIndex] == null)
+            {
+                StepIndex++;
+            }
+            
             _parts[StepIndex].SetActive(true);
+            FullInited?.Invoke();
         }
 
         public static bool ProhibitedFor(IEnumerable<int> indexes)
@@ -65,9 +78,17 @@ namespace VFoundation.Tutorial
         {
             if (TutorialIsCompleted || stepIndex <= StepIndex || stepIndex > StepIndex + 1)
                 return;
+            
             _parts[StepIndex].SetActive(false);
             
             StepIndex = stepIndex;
+            
+            while (!TutorialIsCompleted && _parts[StepIndex] == null)
+            {
+                StepIndex++;
+            }
+            
+            NextStep?.Invoke();
             
             if(!TutorialIsCompleted)
                 _parts[StepIndex].SetActive(nextEnabled);
@@ -82,16 +103,28 @@ namespace VFoundation.Tutorial
 
         public static void Pause(int index)
         {
-            if (index != StepIndex) return;
+            while (index < _parts.Length && _parts[index] == null)
+            {
+                index++;
+            }
             
+            if (index != StepIndex) return;
+
             _parts[StepIndex].SetActive(false);
+            OnPouse?.Invoke();
         }
 
         public static void Resume(int index)
         {
-            if (index != StepIndex) return;
+            while (index < _parts.Length && _parts[index] == null)
+            {
+                index++;
+            }
             
+            if (index != StepIndex) return;
+
             _parts[StepIndex].SetActive(true);
+            OnResume?.Invoke();
         }
 
         public static void HardSetStep(int index)
@@ -116,6 +149,13 @@ namespace VFoundation.Tutorial
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        [ContextMenu("SkipTutorial")]
+        private void SkipTutorial()
+        {
+            HardSetStep(_parts.Length);
+            TutorialCompleted?.Invoke();
         }
     }
 }

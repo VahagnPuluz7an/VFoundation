@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace VFoundation.Tutorial
+namespace Tutorial
 {
     [CreateAssetMenu(fileName = "PointerSettings", menuName = "ScriptableObjects/PointerSettings")]
     public class PointerSettings : ScriptableObject

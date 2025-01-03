@@ -1,35 +1,32 @@
-using DSystem;
+using DG.Tweening;
 using UnityEngine;
-using VFoundation.UI;
+using UnityEngine.UI;
 
-namespace VFoundation
+namespace Settings
 {
-    [DisableInitialize]
-    [RequireComponent(typeof(AnimPanelActivity))]
-    public class SettingsPanel : DBehaviour
+    public class SettingsPanel : MonoBehaviour
     {
-        [Inject] private AnimPanelActivity _activity;
-
-        protected override void OnInitialized()
-        {
-            _activity.Opened += OnOpen;
-            _activity.Closed += OnClose;
-        }
-
-        protected override void OnDestroy()
-        {
-            _activity.Opened -= OnOpen;
-            _activity.Closed -= OnClose;
-        }
-
-        private void OnOpen()
+        [SerializeField] private Image backImage;
+        [SerializeField] private Transform panel; 
+        
+        public void Open()
         {
             Time.timeScale = 0;
+            Color defColor = backImage.color;
+            defColor.a = 0;
+            backImage.color = defColor;
+            panel.localScale = Vector3.zero;
+            gameObject.SetActive(true);
+            
+            backImage.DOFade(1, 0.2f).SetUpdate(true);
+            panel.DOScale(Vector3.one, 0.2f).SetEase(Ease.OutBack).SetUpdate(true);
         }
         
-        private void OnClose()
+        public void Close()
         {
             Time.timeScale = 1;
+            backImage.DOFade(0, 0.2f);
+            panel.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InBack).SetUpdate(true).onComplete += () => gameObject.SetActive(false);
         }
     }
 }

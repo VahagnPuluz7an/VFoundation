@@ -1,12 +1,10 @@
 using System;
-using DSystem;
 using UnityEngine;
-using VFoundation.Tutorial;
+using Zenject;
 
 namespace SDK
 {
-    [AutoRegistry]
-    public class AdsManager : IInitializable, IUpdatable
+    public class AdsManager : IInitializable, ITickable
     {
         public static event Action Rewarded;
 
@@ -17,7 +15,7 @@ namespace SDK
             //Subscribe Rewarded Event To Publisher
         }
         
-        public void Update()
+        public void Tick()
         {
             _timer += Time.deltaTime;
         }
@@ -29,7 +27,7 @@ namespace SDK
 
         public static void ShowInter()
         {
-            if (_timer > 30 && TutorialManager.TutorialIsCompleted)
+            if (_timer > 30)
             {
                 //Show Inter
                 _timer = 0;

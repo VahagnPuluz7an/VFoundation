@@ -1,52 +1,55 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
+using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
-using VFoundation.Helpers;
+using Utils;
+using VFoundation.CoinCollectingEffect;
 using Random = UnityEngine.Random;
 
-namespace VFoundation.CoinCollectingEffect
+namespace CoinCollectingEffect.Scripts
 {
-    public class CollectingEffect : MonoBehaviour
+    public class CollectingEffect
     {
-        private static List<Transform> _imagesTransforms = new ();
+        public bool Playing => _sequences != null && _sequences.Any(x => x != null && x.IsPlaying());
+        
+        private readonly CollectingEffectSettings _settings;
+        private readonly List<Transform> _imagesTransforms;
+        private Tween[] _sequences;
+        private readonly Transform _parent;
+        private readonly bool _useGlobalPos;
 
-        private void Awake()
+        public CollectingEffect(CollectingEffectSettings settings,Transform parent,bool useGlobalPos = true)
         {
+            _settings = settings;
             _imagesTransforms = new List<Transform>();
+            _useGlobalPos = useGlobalPos;
+            _parent = parent;
         }
 
-        private void OnDestroy()
+        public void Effect(Vector2 startScreenPos, Vector3 endPoint, int count, Action callBack)
         {
-            _imagesTransforms = new List<Transform>();
-        }
-
-        public static void Effect(Vector2 startScreenPos, Vector3 endPoint, Transform parent, int count, CollectingEffectSettings settings)
-        {
-            CompleteEffect(startScreenPos, endPoint, parent, count, settings, () => {});
+            CompleteEffect(startScreenPos, endPoint, count, () => callBack?.Invoke());
         }
         
-        public static void Effect(Vector2 startScreenPos, Vector3 endPoint, Transform parent, int count, CollectingEffectSettings settings, Action callBack)
+        public void Effect(Vector2 startScreenPos, Vector3 endPoint)
         {
-            CompleteEffect(startScreenPos, endPoint, parent, count, settings, () => callBack?.Invoke());
-        }
-        
-        public static void Effect(Vector2 startScreenPos, Vector3 endPoint, Transform parent, CollectingEffectSettings settings)
-        {
-            CompleteEffect(startScreenPos, endPoint, parent, settings.ImagesCount, settings, () => {});
+            CompleteEffect(startScreenPos, endPoint, _settings.ImagesCount, () => {});
         }
 
-        private static void CompleteEffect(Vector2 startScreenPos, Vector3 endPoint, Transform parent, int imageCount,CollectingEffectSettings settings, Action callBack)
+        private void CompleteEffect(Vector2 startScreenPos, Vector3 endPoint, int imageCount, Action callBack)
         {
             if (imageCount <= 0)
                 return;
-            
             if(_imagesTransforms.Count <= 0 || _imagesTransforms.Count < imageCount)
-                AddPool(imageCount - _imagesTransforms.Count, settings, parent);
+                AddPool(imageCount - _imagesTransforms.Count, _settings, _parent);
             
-            SetPositionForPool(startScreenPos, imageCount,settings);
+            SetPositionForPool(startScreenPos, imageCount,_settings,_useGlobalPos);
 
+            _sequences = new Tween[imageCount];
+            
             if (_imagesTransforms == null) return;
             for (int i = 0; i < imageCount; i++)
             {
@@ -55,18 +58,28 @@ namespace VFoundation.CoinCollectingEffect
                 image.SetActive(true);
 
                 Sequence sq = DOTween.Sequence();
-                sq.Append(image.DOScale(Vector3.one, settings.Duration).SetEase(Ease.OutBack))
-                    .Append(image.DOMove(endPoint, settings.Duration).SetDelay(settings.Splicing * i / 10f));
-                    //.Append(image.DOScale(Vector3.zero, settings.Duration / 2f));
+                sq.Append(image.DOScale(Vector3.one, _settings.Duration).SetEase(Ease.OutBack))
+                    .Append(image.DOMove(endPoint, _settings.Duration).SetDelay(_settings.Splicing * i / 10f));
+                int i1 = i;
                 sq.onComplete += () =>
                 {
+                    _sequences[i1] = null;
                     image.SetActive(false);
-                    callBack?.Invoke();
                 };
+                _sequences[i] = sq;
             }
+
+            CompositeDisposable disposable = new();
+            Observable.EveryUpdate().Subscribe(_ =>
+            {
+                if (_sequences.Any(x => x != null && x.IsPlaying()))
+                    return;
+                callBack?.Invoke();
+                disposable.Clear();
+            }).AddTo(disposable);
         }
 
-        private static void AddPool(int count, CollectingEffectSettings settings ,Transform parent)
+        private void AddPool(int count, CollectingEffectSettings settings ,Transform parent)
         {
             for (int i = 0; i < count; i++)
             {
@@ -86,12 +99,15 @@ namespace VFoundation.CoinCollectingEffect
             }
         }
 
-        private static void SetPositionForPool(Vector2 startPos, int count ,CollectingEffectSettings settings)
+        private void SetPositionForPool(Vector2 startPos, int count,CollectingEffectSettings settings, bool useGlobalPos = true)
         {
             for (int i = 0; i < count; i++)
             {
-                Transform image = _imagesTransforms[i];
-                image.position = startPos + (Random.insideUnitCircle * settings.NoiseForce * 100);
+                RectTransform image = _imagesTransforms[i].GetComponent<RectTransform>();
+                if (useGlobalPos)
+                    image.position = startPos + (Random.insideUnitCircle * (settings.NoiseForce * 100));
+                else
+                    image.position = startPos + (Random.insideUnitCircle * (settings.NoiseForce * 100));
             }
         }
     }

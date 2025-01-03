@@ -1,21 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Utils;
 
-namespace VFoundation.Pooling.Scripts
+namespace Pooling
 {
-    public class PoolMono <T> where T: MonoBehaviour
+    public class PoolMono <T> where T : Component
     {
-        private T Prefab { get; }
+        public T Prefab { get; private set; }
+        private T[] Prefabs { get; }
         public bool AutoExpand { get; set; }
         private Transform Container { get; }
         
         private List<T> _pool;
+        private bool _random;
 
         public PoolMono(T prefab,int count)
         {
             Prefab = prefab;
-            Container = null;
-
+            Container = new GameObject(prefab.name + " Container").transform;
+            Object.DontDestroyOnLoad(Container);
             CreatePool(count);
         }
 
@@ -26,7 +29,16 @@ namespace VFoundation.Pooling.Scripts
 
             CreatePool(count);
         }
+        
+        public PoolMono(T[] prefabs,int count,bool random)
+        {
+            Prefabs = prefabs;
+            Prefab = Prefabs.TakeRandom();
+            _random = random;
 
+            CreatePool(count);
+        }
+        
         private void CreatePool(int count)
         {
             _pool = new List<T>();
@@ -42,10 +54,28 @@ namespace VFoundation.Pooling.Scripts
             var createdObject = Object.Instantiate(Prefab,Container);
             createdObject.gameObject.SetActive(activeByDefault);
             _pool.Add(createdObject);
+            if(_random)
+                Prefab = Prefabs.TakeRandom();
             return createdObject;
         }
 
-        public bool HasFreeElement(out T element)
+        private bool HasFreeElement(bool enable,out T element)
+        {
+            foreach (var mono in _pool)
+            {
+                if (mono.gameObject.activeSelf)
+                    continue;
+
+                element = mono;
+                mono.gameObject.SetActive(enable);
+                return true;
+            }
+
+            element = null;
+            return false;
+        }
+
+        private bool HasFreeElement(out T element)
         {
             foreach (var mono in _pool)
             {
@@ -61,6 +91,17 @@ namespace VFoundation.Pooling.Scripts
             return false;
         }
 
+        public bool HasFreeElement()
+        {
+            foreach (var mono in _pool)
+            {
+                if (mono.gameObject.activeSelf)
+                    continue;
+                return true;
+            }
+            return false;
+        }
+
         public T GetFreeElement()
         {
             if (HasFreeElement(out var element))
@@ -69,7 +110,20 @@ namespace VFoundation.Pooling.Scripts
             if (AutoExpand)
                 return CreateObject();
 
-            throw new System.Exception($"Ther is no free element in pool of type {typeof(T)}");
+            throw new System.Exception($"There is no free element in pool of type {typeof(T)}");
         }
+        
+        public T GetFreeElementDisabled()
+        {
+            if (HasFreeElement(false, out var element))
+                return element;
+
+            if (AutoExpand)
+                return CreateObject();
+
+            throw new System.Exception($"There is no free element in pool of type {typeof(T)}");
+        }
+
+        public List<T> AllElements() => _pool;
     }
 }
